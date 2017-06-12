@@ -1,0 +1,16 @@
+*.exe
+*.pdb
+*.idb
+*.obj
+*.tlog
+*.log
+*~
+*.swp
+*.db
+*.opendb
+*.ipch
+*.ilk
+*.lib
+*.pch
+.vs/
+debug/
