@@ -72,10 +72,32 @@ void list_initialization()
 	cout << typeid(v1).name() << endl;
 }
 
+constexpr int constexpr_function_get_value()
+{
+
+	return 3 * 3;
+}
+
+void const_expression_bad_example()
+{
+	using namespace  std;
+	constexpr int value = constexpr_function_get_value();
+	int build_in_array[value];
+	cout << "array length: " << sizeof(build_in_array) / sizeof(build_in_array[0]) << endl;
+	switch (1) {
+	case value:
+		cout << value << endl;
+		break;
+	default:
+		cout << "default" << endl;
+	}
+}
+
 int main()
 {
 	demo1_exception_in_constructor();
 	list_initialization();
+	const_expression_bad_example();
     return 0;
 }
 
