@@ -149,12 +149,60 @@ void enum_class_example()
 	//int b = enum_class::value2; //enum class is a new type can't assign to int
 }
 
+template <bool>
+class vector_base_common {
+	vector_base_common() {}
+	void __throw_length_error() const;
+	void __throw_out_of_range() const;
+};
+template <bool __b>
+void
+vector_base_common<__b>::__throw_length_error() const
+{
+	_VSTD::__throw_length_error("vector");
+}
+
+template <bool __b>
+void
+vector_base_common<__b>::__throw_out_of_range() const
+{
+	_VSTD::__throw_out_of_range("vector");
+}
+
+void static_assert_example()
+{
+	static_assert(sizeof(int) == 4, "size of int is not 4");
+	//±‡“Î¥ÌŒÛ error C2338: size of int no more than 4
+	//static_assert(sizeof(int) > 4, "size of int no more than 4");
+
+	//±‡“Î¥ÌŒÛ error C2131: expression did not evaluate to a constant
+	//int a{ 0 };
+	//static_assert(a == 0, "error C2131: expression did not evaluate to a constant");
+}
+
+template<typename FIRST, typename... REMAIN>
+void output(FIRST first, REMAIN... remain)
+{
+	cout << first << " " << ends;
+	output(remain...);
+}
+void output() { cout << endl; }
+
+void variable_template_example()
+{
+	output("a", 1, 0.2);
+}
+
+
 int main()
 {
 	demo1_exception_in_constructor();
 	list_initialization();
 	const_expression_bad_example();
 	range_for();
+	enum_class_example();
+	static_assert_example();
+	variable_template_example();
     return 0;
 }
 
