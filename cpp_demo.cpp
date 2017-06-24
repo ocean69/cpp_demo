@@ -193,6 +193,144 @@ void variable_template_example()
 	output("a", 1, 0.2);
 }
 
+#include <thread>
+#include <mutex>
+
+std::mutex m;
+unsigned i = 0;
+
+class ThreadFuncObject {
+	unsigned thread_index_;
+public:
+	ThreadFuncObject(unsigned thread_index) : thread_index_{thread_index} {}
+	void operator() ()
+	{
+		unique_lock<mutex> lck{ m };
+		cout << "index: " << thread_index_ << endl;
+		cout << "id: " << this_thread::get_id() << endl;
+		cout << ++i << endl;
+	}
+};
+
+
+void cpp_sleep(unsigned time_in_seconds)
+{
+	this_thread::sleep_for(std::chrono::seconds{ time_in_seconds });
+}
+
+void thread_func(unsigned thread_index)
+{
+	unique_lock<mutex> lck{ m };
+	//下面这句cout 和 i 都是多线程不安全的资源
+	cout << "index: " << thread_index << endl;
+	cout << "id: " << this_thread::get_id() << endl;
+	cout << ++i << endl;
+}
+
+void thread_example()
+{
+	unsigned index = 0;
+	thread t1{ thread_func, index++ };
+	thread t2{ ThreadFuncObject{ index++} };
+
+	t1.join();
+	t2.join();
+}
+
+mutex m1, m2, m3;
+
+void multi_lock_example()
+{
+	unique_lock<mutex> lck1{ m1, defer_lock };
+	unique_lock<mutex> lck2{ m2, defer_lock };
+	unique_lock<mutex> lck3{ m3, defer_lock };
+
+	lock(m1, m2, m3); //可以看作 同时获取三个锁 或者一个都不获取
+
+}
+
+#include <condition_variable>
+
+condition_variable condition;
+mutex m4;
+
+void worker()
+{
+	unsigned i = 0;
+	//while (i < 3) {
+	unique_lock<mutex> lck{ m4 };
+		
+	condition.wait(lck); //释放 lck 并等待条件变量
+							//被唤醒后会重新获取lck
+
+	cout << "worker" << endl;
+	//}
+	cout << "thread worker end" << endl;
+}
+
+void notify()
+{
+	unique_lock<mutex> lck{ m4 };
+	cout << "input any key to send condition event" << endl;
+	char ch;
+	getchar();
+	condition.notify_one(); //唤醒worker
+	//返回后lck也被释放
+}
+
+void condition_variable_example()
+{
+	thread t_worker{ worker };
+
+	notify();
+
+	t_worker.join();
+	cout << "condition_variable_example end" << endl;
+}
+
+void cpp_sleep_example()
+{
+	cout << "wait..." << endl;
+	auto t1 = chrono::high_resolution_clock::now();
+	cpp_sleep(5);
+	auto t2 = chrono::high_resolution_clock::now();
+	cout << chrono::duration_cast<chrono::seconds>(t2 - t1).count() << "s" << endl;
+}
+
+#include <future>
+
+void get_from_future(future<unsigned>& f)
+{
+	try {
+		unsigned value = f.get();
+		cout << "get: " << value << endl;
+	} catch(exception ep) {
+		cout << ep.what() << endl;
+	}
+}
+
+void set_promise(promise<unsigned>& p)
+{
+	try {
+		//...
+		cout << "input a number:" << ends;
+		unsigned value;
+		cin >> value;
+		p.set_value(value);
+	} catch(...) {
+		p.set_exception(current_exception());
+	}
+}
+
+void future_promise_example()
+{
+	promise<unsigned> p;
+	thread t_future{ get_from_future , p.get_future()};
+	thread t_promise{ set_promise , std::move(p) };
+
+	t_future.join();
+	t_promise.join();
+}
 
 int main()
 {
@@ -203,6 +341,11 @@ int main()
 	enum_class_example();
 	static_assert_example();
 	variable_template_example();
+	thread_example();
+	multi_lock_example();
+	cpp_sleep_example();
+	condition_variable_example();
+	future_promise_example();
     return 0;
 }
 
