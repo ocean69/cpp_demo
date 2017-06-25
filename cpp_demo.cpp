@@ -280,6 +280,7 @@ void notify()
 
 void condition_variable_example()
 {
+	//现在这个函数有时候会卡住 但是还没发现问题
 	thread t_worker{ worker };
 
 	notify();
@@ -332,6 +333,50 @@ void future_promise_example()
 	t_promise.join();
 }
 
+
+double return_something()
+{
+	cout << "input a double value: " << ends;
+	double value;
+	cin >> value;
+	return value;
+}
+
+void packaged_task_example()
+{
+	using func_protype = double(void);
+	packaged_task<func_protype> task1{ return_something };
+	auto f = task1.get_future();
+	thread thread1{ std::move(task1) };
+	double value = f.get();
+	try {
+		cout << "input value: " << value << endl;
+	} catch (const std::exception& e) {
+		cout << e.what() << endl;
+	}
+	//如果这里没有join 就有一定的可能会因为thread1没有结束而引发异常 所以可以看出future的值可以获取到，也不意味着线程已经结束了
+	//有那么一段时间是 future的值已经得到，但是线程还没有结束
+	thread1.join();
+}
+
+thread::id get_thread_id(unsigned i)
+{
+	return this_thread::get_id();
+}
+
+void async_example()
+{
+	unsigned i = 0;
+	auto f0 = async(get_thread_id, i++);
+	auto f1 = async(get_thread_id, i++);
+	auto f2 = async(get_thread_id, i++);
+	cout << this_thread::get_id() << endl;
+	cout << f0.get() << endl;
+	cout << f1.get() << endl;
+	cout << f2.get() << endl;
+	//会有几个线程 并不是确定的
+}
+
 int main()
 {
 	demo1_exception_in_constructor();
@@ -346,6 +391,9 @@ int main()
 	cpp_sleep_example();
 	condition_variable_example();
 	future_promise_example();
+	packaged_task_example();
+	async_example();
+	//现在返回以后 会触发异常 还没搞懂为什么触发
     return 0;
 }
 
